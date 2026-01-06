@@ -131,10 +131,10 @@ function add_button(navButtons, buttonName, text, eventListener) {
 
     newButtonDropdown.className = "expandable secondary hidden"
     newButtonDropdown.id = buttonName + "dropdown"
-    newButtonDropdown.style.marginTop = "36px"
     
+    newButtonDropdownInfo.className = "region"
     newButtonDropdownInfo.id = buttonName + "dropdownInfo"
-    newButtonDropdownInfo.style.display = "block"
+    newButtonDropdownInfo.style.display = "flex"
 
     newButtonDropdown.appendChild(newButtonDropdownInfo)
     newButton.appendChild(newButtonText)
