@@ -8,8 +8,6 @@ async function saveConnectionDetails(event: SubmitEvent) {
   const form = event.currentTarget as HTMLFormElement;
   const formData = new FormData(form);
 
-  console.log(`saving ip: ${formData.get("ip")}`)
-
   await browser.storage?.local.set({
     ip: formData.get("ip"),
     port: formData.get("port"),
@@ -20,19 +18,19 @@ async function saveConnectionDetails(event: SubmitEvent) {
 
 function getSelectedDevices(): string[] {
   const checkedBoxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked');
-  return Array.from(checkedBoxes).map((cb) => cb.value);
+  return Array.from(checkedBoxes).map((box) => box.value);
 }
 
-async function restoreConnectionDetails(): Promise<LocalData> {
-  const res = await browser.storage?.local.get() as LocalData;
+const loadLocalData = (): Promise<LocalData> => browser.storage?.local.get() as Promise<LocalData>;
+
+function reloadDetails(config: LocalData): void {
   const ipInput = document.querySelector("#ip") as HTMLInputElement;
   const portInput = document.querySelector("#port") as HTMLInputElement;
   const fandomInput = document.querySelector("#fandom") as HTMLInputElement;
 
-  ipInput.value = res?.ip ?? ''
-  portInput.value = res?.port ?? ''
-  fandomInput.value = res?.fandom ?? ''
-  return res;
+  ipInput.value = config?.ip ?? '';
+  portInput.value = config?.port ?? '';
+  fandomInput.value = config?.fandom ?? '';
 }
 
 async function getDevices(config: LocalData) {
@@ -62,10 +60,10 @@ async function getDevices(config: LocalData) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  let config: LocalData = await restoreConnectionDetails();
+  let config: LocalData = await loadLocalData();
   console.log(config);
-  //TODO catch undefined
   getDevices(config);
+  reloadDetails(config);
 });
 
 const form = document.querySelector("#address") as HTMLFormElement;

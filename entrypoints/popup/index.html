@@ -8,16 +8,18 @@
     <div id="popup-content">
       <form id="address">
         <label for="ip">IP:</label>
-        <input type="text" id="ip" name="ip"><br><br>
+        <input type="text" id="ip" name="ip" required=><br><br>
         <label for="port">Port:</label>
-        <input type="text" id="port" name="port"><br><br>
+        <input type="number" id="port" name="port" min="0" max="65535" size="5" required><br><br>
         <label for="fandom">Fandom Override:</label>
         <input type="text" id="fandom" name="fandom"><br><br>
         <label for="devices">Devices:</label>
-        <div id="devices"></div><br><br>
+        <div id="devices"></div><br>
         <input type="submit" value="Save">
       </form>
+      <button id="loadDevices">Load Devices</button>
     </div>
+    <div></div>
     <script type="module" src="AO3.js"></script>
   </body>
 </html>
