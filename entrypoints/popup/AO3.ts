@@ -21,9 +21,21 @@ function getSelectedDevices(): string[] {
   return Array.from(checkedBoxes).map((box) => box.value);
 }
 
-const loadLocalData = (): Promise<LocalData> => browser.storage?.local.get() as Promise<LocalData>;
+async function loadLocalData(): LocalData | null {
+  const keysToFetch: (keyof LocalData)[] = ['ip', 'port', 'fandom', 'devices'];
 
-function reloadDetails(config: LocalData): void {
+  const result = await browser.storage.local.get(keysToFetch);
+
+  // Check if the returned object has any keys
+  if (Object.keys(result).length === 0) {
+    return null;
+  }
+
+  // Safe to cast now that we know data exists
+  return result as LocalData;
+}
+
+function reloadDetails(config: LocalData | null): void {
   const ipInput = document.querySelector("#ip") as HTMLInputElement;
   const portInput = document.querySelector("#port") as HTMLInputElement;
   const fandomInput = document.querySelector("#fandom") as HTMLInputElement;
@@ -33,10 +45,29 @@ function reloadDetails(config: LocalData): void {
   fandomInput.value = config?.fandom ?? '';
 }
 
-async function getDevices(config: LocalData) {
+//TODO fix checked devices being lost on clicking load devices after already loading and saving config
+async function getDevices(config: (LocalData | null) | PointerEvent) {
   const devicesDiv = document.getElementById('devices') as HTMLDivElement;
+  devicesDiv.replaceChildren();
 
-  const res: Response = await fetch(`http://${config.ip}:${config.port}/devices`);
+  let res: Response;
+  if (config && 'ip' in config) {
+    console.log(`config exists: ${config}`)
+    res = await fetch(`http://${config.ip}:${config.port}/devices`)
+  } else {
+    console.log("config doesn't exist")
+    const ipInput = document.querySelector("#ip") as HTMLInputElement;
+    const portInput = document.querySelector("#port") as HTMLInputElement;
+
+    if (ipInput.value && portInput.value) {
+      console.log(`Loaded ip: ${ipInput.value}, port: ${portInput.value}`)
+      res = await fetch(`http://${ipInput.value}:${portInput.value}/devices`)
+    } else {
+      console.log("found nothing, exiting")
+      return
+    }
+  };
+
   const devices: string[] = await res.json();
   console.log(res)
   console.log(devices)
@@ -47,7 +78,7 @@ async function getDevices(config: LocalData) {
     deviceCheckbox.id = `device-${device}`;
     deviceCheckbox.name = 'devices[]';
     deviceCheckbox.value = device;
-    deviceCheckbox.checked = config.devices.includes(device);
+    deviceCheckbox.checked = config.devices?.includes(device) ?? false;
 
     const deviceLabel = document.createElement('label') as HTMLLabelElement;
     deviceLabel.htmlFor = `device-${device}`;
@@ -60,7 +91,7 @@ async function getDevices(config: LocalData) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  let config: LocalData = await loadLocalData();
+  const config: LocalData = await loadLocalData();
   console.log(config);
   getDevices(config);
   reloadDetails(config);
@@ -68,4 +99,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 const form = document.querySelector("#address") as HTMLFormElement;
 form?.addEventListener("submit", saveConnectionDetails);
+const loadButton = document.querySelector("#loadDevices") as HTMLButtonElement
+loadButton?.addEventListener("click", getDevices);
 

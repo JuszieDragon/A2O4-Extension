@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill";
 
 import { LocalData } from "../../types/local-data";
+import { A2O4Request, DownloadFormat } from "../../types/a2o4-request.ts";
 
 async function showDropdown(source: string, buttonText: string, message: string) {
   const download_button = document.getElementById(source + "ButtonText") as HTMLAnchorElement;
@@ -46,22 +47,19 @@ async function downloadUrl(AO3Url: string, source: string, useFandomOverride = f
   if (info_dropdown) info_dropdown.classList.add("hidden");
 
   let response: Response;
-  const body = useFandomOverride ?
-    JSON.stringify({
-      url: AO3Url,
-      fandom_override: fandomOverride
-    })
-    :
-    JSON.stringify({
-      url: AO3Url
-    });
+  const request: A2O4Request = {
+    url: AO3Url,
+    devices: config.devices,
+    fandom_override: useFandomOverride ? fandomOverride : null,
+    format: DownloadFormat.EPUB
+  }
   try {
     response = await fetch(`http://${serverIp}/download`, {
       method: "POST",
       headers: {
         'Content-Type': 'application/json'
       },
-      body: body,
+      body: JSON.stringify(request),
     });
     console.log(await response);
   } catch (e: unknown) {
