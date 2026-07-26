@@ -8,7 +8,8 @@ export enum DownloadFormat {
 
 export type A2O4Request = {
   url: string,
-  devices: string[],
+  devices_to_upload_to: string[],
+  devices_to_queue: string[],
   fandom_override: string | null,
   format: DownloadFormat
 }

@@ -2,6 +2,7 @@ import browser from "webextension-polyfill";
 
 import { LocalData } from "../../types/local-data";
 import { A2O4Request, DownloadFormat } from "../../types/a2o4-request.ts";
+import { constructBaseUrl } from "../../lib/fetch.ts";
 
 async function showDropdown(source: string, buttonText: string, message: string) {
   const download_button = document.getElementById(source + "ButtonText") as HTMLAnchorElement;
@@ -20,24 +21,19 @@ async function downloadUrlWithFandomOverride(AO3Url: string, source: string) {
 
 async function downloadUrl(AO3Url: string, source: string, useFandomOverride = false) {
   const config = await browser.storage.local.get() as LocalData;
-  const serverIp: string = `${config.ip}:${config.port}`;
   const fandomOverride: string = config.fandom;
 
   if (config.ip == '' || config.ip == undefined) {
     showDropdown(source, "Error", "Server IP is not set");
     return
-  }
-  else if (config.port == '' || config.port == undefined) {
-    showDropdown(source, "Error", "Server port is not set");
-    return
-  }
-  else if (!/^\d+$/.test(config.port)) {
+  } else if (!/^\d+$/.test(config.port)) {
     showDropdown(source, "Error", "Port entered is not valid");
     return
-  }
-  else if (useFandomOverride && (fandomOverride == '' || fandomOverride == undefined)) {
+  } else if (useFandomOverride && (fandomOverride == '' || fandomOverride == undefined)) {
     showDropdown(source, "Error", "Fandom override is not set");
     return
+  } else if (config.devices_to_upload_to.length == 0 && config.devices_to_queue == 0) {
+    showDropdown(source, "Error", "Must set a device to upload to and/or queue");
   }
 
   const download_button = document.getElementById(source + "ButtonText") as HTMLAnchorElement;
@@ -49,12 +45,13 @@ async function downloadUrl(AO3Url: string, source: string, useFandomOverride = f
   let response: Response;
   const request: A2O4Request = {
     url: AO3Url,
-    devices: config.devices,
+    devices_to_upload_to: config.devices_to_upload_to,
+    devices_to_queue: config.devices_to_queue,
     fandom_override: useFandomOverride ? fandomOverride : null,
     format: DownloadFormat.EPUB
   }
   try {
-    response = await fetch(`http://${serverIp}/download`, {
+    response = await fetch(`${constructBaseUrl(config.ip, config.port)}/download`, {
       method: "POST",
       headers: {
         'Content-Type': 'application/json'
@@ -68,7 +65,7 @@ async function downloadUrl(AO3Url: string, source: string, useFandomOverride = f
 
     if (e instanceof Error) {
       if (e.message.startsWith("NetworkError")) {
-        showDropdown(source, "Error", `Cannot connect to server ${serverIp}, check ip and server state`);
+        showDropdown(source, "Error", `Cannot connect to server at ${serverIp}, check ip and server state`);
       } else {
         showDropdown(source, "Error", e.message);
       }

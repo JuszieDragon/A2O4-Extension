@@ -13,7 +13,6 @@
       in {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            firefox
             nodejs
             pnpm
           ];
